@@ -56,7 +56,7 @@ class TableChart {
           }),
           backgroundColor: this.getColor(colIndex),
           borderColor: this.getColor(colIndex),
-          fill: this.chartType === "line" ? false : true,
+          fill: this.chartType === "line" ? this.table.dataset.fill === "true" : true,
           tension: this.chartType === "line" ? 0.3 : 0,
           stack: this.chartType === "stacked" ? "stack1" : undefined,
         };
