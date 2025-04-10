@@ -37,17 +37,16 @@ class TableChart {
       return;
     }
 
-    const headerCells = Array.from(thead.querySelectorAll("th"));
-    const headers = headerCells.map((th) => th.textContent.trim());
+    const headerCells = Array.from(thead.querySelectorAll("th")).map((th) => th.textContent.trim());
 
-    if (["stacked", "grouped"].includes(this.chartType)) {
+    if (["line", "bar", "stacked", "grouped"].includes(this.chartType)) {
       const rows = Array.from(tbody.querySelectorAll("tr"));
       this.labels = rows.map((row) => {
         const th = row.querySelector("th");
         return th ? th.textContent.trim() : "";
       });
 
-      this.datasets = headers.slice(1).map((seriesName, colIndex) => {
+      this.datasets = headerCells.slice(1).map((seriesName, colIndex) => {
         return {
           label: seriesName,
           data: rows.map((row) => {
@@ -56,33 +55,32 @@ class TableChart {
             return cell ? parseFloat(cell.textContent) : 0;
           }),
           backgroundColor: this.getColor(colIndex),
+          borderColor: this.getColor(colIndex),
+          fill: this.chartType === "line" ? false : true,
+          tension: this.chartType === "line" ? 0.3 : 0,
           stack: this.chartType === "stacked" ? "stack1" : undefined,
         };
       });
     } else if (["pie", "doughnut"].includes(this.chartType)) {
       const rows = Array.from(tbody.querySelectorAll("tr"));
-      this.labels = rows.map((row) => {
+      this.labels = [];
+      this.data = [];
+
+      rows.forEach((row) => {
         const th = row.querySelector("th");
-        return th ? th.textContent.trim() : "";
-      });
-      this.data = rows.map((row) => {
         const td = row.querySelector("td");
-        return td ? parseFloat(td.textContent.replace("%", "").trim()) : 0;
+        if (th && td) {
+          this.labels.push(th.textContent.trim());
+          this.data.push(parseFloat(td.textContent));
+        }
       });
-    } else {
-      // Basic bar or line chart with single dataset
-      this.labels = headers;
-      const firstRow = tbody.querySelector("tr");
-      if (firstRow) {
-        this.data = Array.from(firstRow.querySelectorAll("td")).map((td) => parseFloat(td.textContent));
-      }
     }
   }
 
   makeTableAccessible() {
     this.table.setAttribute("aria-hidden", "false");
     this.table.setAttribute("role", "region");
-    this.table.setAttribute("aria-label", "Chart data table " + this.tableId);
+    this.table.setAttribute("aria-label", "Chart data table");
     // this.table.style.position = "absolute";
     // this.table.style.left = "-9999px";
     // this.table.style.top = "auto";
@@ -114,24 +112,13 @@ class TableChart {
           },
         ],
       };
-    } else if (["stacked", "grouped"].includes(chartType)) {
-      chartType = "bar";
+    } else {
+      if (["stacked", "grouped"].includes(chartType)) {
+        chartType = "bar";
+      }
       data = {
         labels: this.labels,
         datasets: this.datasets,
-      };
-    } else {
-      data = {
-        labels: this.labels,
-        datasets: [
-          {
-            label: "Data",
-            data: this.data,
-            backgroundColor: "rgba(54, 162, 235, 0.5)",
-            borderColor: "#36a2eb",
-            borderWidth: 1,
-          },
-        ],
       };
     }
 
@@ -143,7 +130,7 @@ class TableChart {
           text: `${this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)} Chart`,
         },
       },
-      scales: ["stacked", "grouped"].includes(this.chartType)
+      scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
         ? {
             x: { stacked: this.chartType === "stacked" },
             y: { stacked: this.chartType === "stacked", beginAtZero: true },
@@ -164,13 +151,10 @@ class TableChart {
   }
 }
 
-// Example usage
-// new TableChart("endowment-value", "line").render();
-
-// auto intitializer
-document.addEventListener("DOMContentLoaded", function () {
+// Auto-init all tables with data-chart-type
+document.addEventListener("DOMContentLoaded", () => {
   const tables = document.querySelectorAll("table[data-chart-type]");
-  tables.forEach(function (table) {
+  tables.forEach((table) => {
     if (table.id) {
       new TableChart(table.id);
     } else {
