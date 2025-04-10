@@ -56,13 +56,14 @@ class TableChart {
   makeTableAccessible() {
     this.table.setAttribute("aria-hidden", "false");
     this.table.setAttribute("role", "region");
-    this.table.setAttribute("aria-label", "Chart data table");
-    this.table.style.position = "absolute";
-    this.table.style.left = "-9999px";
-    this.table.style.top = "auto";
-    this.table.style.width = "1px";
-    this.table.style.height = "1px";
+    this.table.setAttribute("aria-label", "Chart data table " + this.tableId);
+    // this.table.style.position = "absolute";
+    // this.table.style.left = "-9999px";
+    // this.table.style.top = "auto";
+    // this.table.style.width = "1px";
+    // this.table.style.height = "1px";
     this.table.style.overflow = "hidden";
+    this.table.style.display = "none";
   }
 
   insertCanvas() {
