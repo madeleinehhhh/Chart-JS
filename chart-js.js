@@ -29,27 +29,53 @@ class TableChart {
   }
 
   parseTable() {
-    const rows = Array.from(this.table.querySelectorAll("tr"));
-    const headers = Array.from(rows[0].querySelectorAll("th")).map((th) => th.textContent.trim());
+    const thead = this.table.querySelector("thead");
+    const tbody = this.table.querySelector("tbody");
+
+    if (!thead || !tbody) {
+      console.error(`Table with ID "${this.tableId}" must have both <thead> and <tbody>.`);
+      return;
+    }
+
+    const headerCells = Array.from(thead.querySelectorAll("th"));
+    const headers = headerCells.map((th) => th.textContent.trim());
 
     if (["stacked", "grouped"].includes(this.chartType)) {
-      this.labels = rows.slice(1).map((row) => row.querySelector("th").textContent.trim());
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      this.labels = rows.map((row) => {
+        const th = row.querySelector("th");
+        return th ? th.textContent.trim() : "";
+      });
 
       this.datasets = headers.slice(1).map((seriesName, colIndex) => {
         return {
           label: seriesName,
-          data: rows.slice(1).map((row) => {
-            const cell = row.querySelectorAll("td")[colIndex];
+          data: rows.map((row) => {
+            const cells = row.querySelectorAll("td");
+            const cell = cells[colIndex];
             return cell ? parseFloat(cell.textContent) : 0;
           }),
           backgroundColor: this.getColor(colIndex),
           stack: this.chartType === "stacked" ? "stack1" : undefined,
         };
       });
+    } else if (["pie", "doughnut"].includes(this.chartType)) {
+      const rows = Array.from(tbody.querySelectorAll("tr"));
+      this.labels = rows.map((row) => {
+        const th = row.querySelector("th");
+        return th ? th.textContent.trim() : "";
+      });
+      this.data = rows.map((row) => {
+        const td = row.querySelector("td");
+        return td ? parseFloat(td.textContent.replace("%", "").trim()) : 0;
+      });
     } else {
+      // Basic bar or line chart with single dataset
       this.labels = headers;
-      const dataRow = rows[1];
-      this.data = Array.from(dataRow.querySelectorAll("td")).map((td) => parseFloat(td.textContent));
+      const firstRow = tbody.querySelector("tr");
+      if (firstRow) {
+        this.data = Array.from(firstRow.querySelectorAll("td")).map((td) => parseFloat(td.textContent));
+      }
     }
   }
 
