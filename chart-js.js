@@ -1,7 +1,6 @@
 class TableChart {
-  constructor(tableId, chartType) {
+  constructor(tableId) {
     this.tableId = tableId;
-    this.chartType = chartType;
     this.table = document.getElementById(tableId);
     this.chartId = `${tableId}-canvasjs`;
     this.labels = [];
@@ -9,6 +8,12 @@ class TableChart {
 
     if (!this.table) {
       console.error(`Table with ID "${tableId}" not found.`);
+      return;
+    }
+
+    this.chartType = this.table.dataset.chartType;
+    if (!this.chartType) {
+      console.error(`No data-chart-type attribute found on table with ID "${tableId}".`);
       return;
     }
 
@@ -28,7 +33,6 @@ class TableChart {
     const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
 
     if (['stacked', 'grouped'].includes(this.chartType)) {
-      // First header is for labels, rest are series
       this.labels = rows.slice(1).map(row => row.querySelector('th').textContent.trim());
 
       this.datasets = headers.slice(1).map((seriesName, colIndex) => {
@@ -44,7 +48,6 @@ class TableChart {
       });
 
     } else {
-      // For pie, bar, line with single dataset
       this.labels = headers;
       const dataRow = rows[1];
       this.data = Array.from(dataRow.querySelectorAll('td')).map(td => parseFloat(td.textContent));
