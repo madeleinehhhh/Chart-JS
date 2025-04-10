@@ -1,90 +1,145 @@
 class TableChart {
-  constructor(tableId, chartType = "line") {
+  constructor(tableId, chartType) {
     this.tableId = tableId;
     this.chartType = chartType;
+    this.table = document.getElementById(tableId);
+    this.chartId = `${tableId}-canvasjs`;
     this.labels = [];
-    this.data = [];
-  }
+    this.datasets = [];
 
-  extractData() {
-    const table = document.getElementById(this.tableId);
-    if (!table) {
-      console.warn(`Table with ID '${this.tableId}' not found.`);
+    if (!this.table) {
+      console.error(`Table with ID "${tableId}" not found.`);
       return;
     }
 
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach((row) => {
-      const th = row.querySelector("th");
-      const td = row.querySelector("td");
-      const label = th?.textContent.trim();
-      const value = td?.textContent.trim();
-      if (label && value) {
-        this.labels.push(label);
-        this.data.push(Number(value));
-      }
-    });
+    this.prepareChart();
+  }
 
-    table.style.display = "none";
+  prepareChart() {
+    this.parseTable();
+    this.makeTableAccessible();
+    this.table.style.display = 'none';
+    this.insertCanvas();
+    this.renderChart();
+  }
+
+  parseTable() {
+    const rows = Array.from(this.table.querySelectorAll('tr'));
+    const headers = Array.from(rows[0].querySelectorAll('th')).map(th => th.textContent.trim());
+
+    if (['stacked', 'grouped'].includes(this.chartType)) {
+      // First header is for labels, rest are series
+      this.labels = rows.slice(1).map(row => row.querySelector('th').textContent.trim());
+
+      this.datasets = headers.slice(1).map((seriesName, colIndex) => {
+        return {
+          label: seriesName,
+          data: rows.slice(1).map(row => {
+            const cell = row.querySelectorAll('td')[colIndex];
+            return cell ? parseFloat(cell.textContent) : 0;
+          }),
+          backgroundColor: this.getColor(colIndex),
+          stack: this.chartType === 'stacked' ? 'stack1' : undefined
+        };
+      });
+
+    } else {
+      // For pie, bar, line with single dataset
+      this.labels = headers;
+      const dataRow = rows[1];
+      this.data = Array.from(dataRow.querySelectorAll('td')).map(td => parseFloat(td.textContent));
+    }
+  }
+
+  makeTableAccessible() {
+    this.table.setAttribute('aria-hidden', 'false');
+    this.table.setAttribute('role', 'region');
+    this.table.setAttribute('aria-label', 'Chart data table');
+    this.table.style.position = 'absolute';
+    this.table.style.left = '-9999px';
+    this.table.style.top = 'auto';
+    this.table.style.width = '1px';
+    this.table.style.height = '1px';
+    this.table.style.overflow = 'hidden';
   }
 
   insertCanvas() {
-    const canvas = document.createElement("canvas");
-    canvas.id = `${this.tableId}-canvasjs`;
-    const table = document.getElementById(this.tableId);
-    table.parentNode.insertBefore(canvas, table.nextSibling);
-    return canvas;
+    const canvas = document.createElement('canvas');
+    canvas.id = this.chartId;
+    this.table.insertAdjacentElement('afterend', canvas);
   }
 
-  renderChart(canvas) {
-    const ctx = canvas.getContext("2d");
-    new Chart(ctx, {
-      type: this.chartType,
-      data: {
+  renderChart() {
+    const ctx = document.getElementById(this.chartId).getContext('2d');
+
+    let chartType = this.chartType;
+    let data, options;
+
+    if (['pie', 'doughnut'].includes(chartType)) {
+      data = {
         labels: this.labels,
-        datasets: [
-          {
-            label: `Data from #${this.tableId}`,
-            data: this.data,
-            fill: this.chartType === "line" || this.chartType === "radar",
-            backgroundColor: "rgba(75, 192, 192, 0.2)",
-            borderColor: "rgba(75, 192, 192, 1)",
-            borderWidth: 2,
-            tension: 0.3,
-            pointRadius: 3,
-          },
-        ],
+        datasets: [{
+          data: this.data,
+          backgroundColor: this.labels.map((_, i) => this.getColor(i))
+        }]
+      };
+    } else if (['stacked', 'grouped'].includes(chartType)) {
+      chartType = 'bar';
+      data = {
+        labels: this.labels,
+        datasets: this.datasets
+      };
+    } else {
+      data = {
+        labels: this.labels,
+        datasets: [{
+          label: 'Data',
+          data: this.data,
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: '#36a2eb',
+          borderWidth: 1
+        }]
+      };
+    }
+
+    options = {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: `${this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)} Chart`
+        }
       },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: { display: true, text: "Value" },
-          },
-          x: {
-            title: { display: true, text: "Label" },
-          },
-        },
-        plugins: {
-          tooltip: {
-            mode: "index",
-            intersect: false,
-          },
-          legend: {
-            display: true,
-          },
-        },
-      },
+      scales: ['stacked', 'grouped'].includes(this.chartType) ? {
+        x: { stacked: this.chartType === 'stacked' },
+        y: { stacked: this.chartType === 'stacked', beginAtZero: true }
+      } : {}
+    };
+
+    new Chart(ctx, {
+      type: chartType,
+      data,
+      options
     });
   }
 
-  render() {
-    this.extractData();
-    const canvas = this.insertCanvas();
-    this.renderChart(canvas);
+  getColor(index) {
+    const palette = [
+      '#36a2eb', '#ff6384', '#ffcd56',
+      '#4bc0c0', '#9966ff', '#c9cbcf'
+    ];
+    return palette[index % palette.length];
   }
 }
+
+getColor(index) {
+  const colors = [
+    '#36a2eb', '#ff6384', '#ffcd56',
+    '#4bc0c0', '#9966ff', '#c9cbcf'
+  ];
+  return colors[index % colors.length];
+}
+
 
 // Example usage
 new TableChart("endowment-value", "line").render();
