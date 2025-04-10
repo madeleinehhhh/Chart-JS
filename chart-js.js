@@ -141,9 +141,9 @@ class TableChart {
 // new TableChart("endowment-value", "line").render();
 
 // auto intitializer
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function () {
   const tables = document.querySelectorAll("table[data-chart-type]");
-  tables.forEach((table) => {
+  tables.forEach(function (table) {
     if (table.id) {
       new TableChart(table.id);
     } else {
