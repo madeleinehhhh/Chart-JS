@@ -54,8 +54,8 @@ class TableChart {
             const cell = cells[colIndex];
             return cell ? parseFloat(cell.textContent) : 0;
           }),
-          backgroundColor: (ctx) => this.getGradientColor(colIndex, ctx.chart.ctx, this.chartType),
-          borderColor: (ctx) => this.getGradientColor(colIndex, ctx.chart.ctx, this.chartType),
+          backgroundColor: this.getColor(colIndex),
+          borderColor: this.getColor(colIndex),
           fill: this.chartType === "line" ? (this.table.dataset.fill === "true") : true,
           tension: this.chartType === "line" ? 0.3 : 0,
           stack: this.chartType === "stacked" ? "stack1" : undefined,
@@ -102,7 +102,7 @@ class TableChart {
         labels: this.labels,
         datasets: [{
           data: this.data,
-          backgroundColor: this.labels.map((_, i) => this.getGradientColor(i, ctx, this.chartType)),
+          backgroundColor: this.labels.map((_, i) => this.getColor(i)),
         }],
       };
     } else {
@@ -122,11 +122,6 @@ class TableChart {
           display: true,
           text: `${this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)} Chart`,
         },
-        legend: {
-          labels: {
-            color: '#333',
-          },
-        },
       },
       scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
         ? {
@@ -143,47 +138,16 @@ class TableChart {
     });
   }
 
-  getGradientColor(index, ctx, type) {
-    const schemes = {
-      gold: ['#f8ff94', '#ffb81c'],
-      darkGreen: ['#006a52', '#154734'],
-      green: ['#00933b', '#007a33'],
-      lightGreen: ['#98bc00', '#7a9a01'],
-    };
-
-    const gradients = Object.values(schemes);
-    const [start, end] = gradients[index % gradients.length];
-
-    if (type === "pie" || type === "doughnut") {
-      const radial = ctx.createRadialGradient(150, 150, 0, 150, 150, 150);
-      radial.addColorStop(0, start);
-      radial.addColorStop(1, end);
-      return radial;
-    } else if (type === "line") {
-      const linear = ctx.createLinearGradient(0, 400, 0, 0);
-      linear.addColorStop(0, start);
-      linear.addColorStop(1, "rgba(255,184,28,0)"); // transparent top
-      return linear;
-    } else {
-      const linear = ctx.createLinearGradient(0, 400, 0, 0);
-      linear.addColorStop(0, start);
-      linear.addColorStop(1, end);
-      return linear;
-    }
+  getColor(index) {
+    const palette = [
+      "#ffb81c", // gold
+      "#154734", // dark green
+      "#007a33", // green
+      "#7a9a01", // light green
+    ];
+    return palette[index % palette.length];
   }
-}
-
-// Auto-init all tables with data-chart-type
-document.addEventListener("DOMContentLoaded", () => {
-  const tables = document.querySelectorAll("table[data-chart-type]");
-  tables.forEach((table) => {
-    if (table.id) {
-      new TableChart(table.id);
-    } else {
-      console.warn("Skipping table without ID:", table);
-    }
-  });
-});
+  }
 
 // Auto-init all tables with data-chart-type
 document.addEventListener("DOMContentLoaded", () => {
