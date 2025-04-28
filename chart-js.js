@@ -39,7 +39,7 @@ class TableChart {
 
     const headerCells = Array.from(thead.querySelectorAll("th")).map((th) => th.textContent.trim());
 
-    if (["line", "bar", "stacked", "grouped"].includes(this.chartType)) {
+    if (["line", "bar", "stacked", "grouped", "area"].includes(this.chartType)) {
       const rows = Array.from(tbody.querySelectorAll("tr"));
       this.labels = rows.map((row) => {
         const th = row.querySelector("th");
@@ -54,10 +54,10 @@ class TableChart {
             const cell = cells[colIndex];
             return cell ? parseFloat(cell.textContent) : 0;
           }),
-          backgroundColor: this.getColor(colIndex),
-          borderColor: this.getColor(colIndex),
-          fill: this.chartType === "line" ? this.table.dataset.fill === "true" : true,
-          tension: this.chartType === "line" ? 0.3 : 0,
+          backgroundColor: null, // We'll apply gradient in renderChart
+          borderColor: null,
+          fill: this.chartType === "area" ? true : false,
+          tension: this.chartType === "line" || this.chartType === "area" ? 0.3 : 0,
           stack: this.chartType === "stacked" ? "stack1" : undefined,
         };
       });
@@ -81,11 +81,6 @@ class TableChart {
     this.table.setAttribute("aria-hidden", "false");
     this.table.setAttribute("role", "region");
     this.table.setAttribute("aria-label", "Chart data table");
-    // this.table.style.position = "absolute";
-    // this.table.style.left = "-9999px";
-    // this.table.style.top = "auto";
-    // this.table.style.width = "1px";
-    // this.table.style.height = "1px";
     this.table.style.overflow = "hidden";
     this.table.style.display = "none";
   }
@@ -94,6 +89,45 @@ class TableChart {
     const canvas = document.createElement("canvas");
     canvas.id = this.chartId;
     this.table.insertAdjacentElement("afterend", canvas);
+  }
+
+  createGradient(ctx, type, colors) {
+    let gradient;
+    if (type === "radial") {
+      gradient = ctx.createRadialGradient(
+        ctx.canvas.width / 2,
+        ctx.canvas.height / 2,
+        0,
+        ctx.canvas.width / 2,
+        ctx.canvas.height / 2,
+        ctx.canvas.width / 2
+      );
+    } else {
+      gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+    }
+    gradient.addColorStop(0, colors[0]);
+    gradient.addColorStop(1, colors[1]);
+    return gradient;
+  }
+
+  getColor(ctx, chartType, index = 0) {
+    const gradients = [
+      ["#f8ff94", "#ffb81c"], // gold
+      ["#006a52", "#154734"], // dark green
+      ["#00933b", "#007a33"], // green
+      ["#98bc00", "#7a9a01"], // light green
+    ];
+
+    if (["pie", "doughnut"].includes(chartType)) {
+      const colorSet = gradients[index % gradients.length];
+      return this.createGradient(ctx, "radial", colorSet);
+    } else if (chartType === "bar" || chartType === "stacked" || chartType === "grouped") {
+      return this.createGradient(ctx, "linear", ["#006a52", "#154734"]); // dark green
+    } else if (chartType === "area") {
+      return this.createGradient(ctx, "linear", ["#f8ff94", "#ffb81c"]); // gold
+    } else {
+      return "#36a2eb"; // fallback solid color
+    }
   }
 
   renderChart() {
@@ -108,7 +142,7 @@ class TableChart {
         datasets: [
           {
             data: this.data,
-            backgroundColor: this.labels.map((_, i) => this.getColor(i)),
+            backgroundColor: this.labels.map((_, i) => this.getColor(ctx, chartType, i)),
           },
         ],
       };
@@ -116,6 +150,14 @@ class TableChart {
       if (["stacked", "grouped"].includes(chartType)) {
         chartType = "bar";
       }
+
+      // Apply colors to datasets
+      this.datasets = this.datasets.map((dataset, index) => ({
+        ...dataset,
+        backgroundColor: this.getColor(ctx, this.chartType, index),
+        borderColor: (this.chartType === "line" || this.chartType === "area") ? "#ffb81c" : undefined,
+      }));
+
       data = {
         labels: this.labels,
         datasets: this.datasets,
@@ -130,7 +172,7 @@ class TableChart {
           text: `${this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)} Chart`,
         },
       },
-      scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
+      scales: ["stacked", "grouped", "bar", "line", "area"].includes(chartType)
         ? {
             x: { stacked: this.chartType === "stacked" },
             y: { stacked: this.chartType === "stacked", beginAtZero: true },
@@ -139,15 +181,10 @@ class TableChart {
     };
 
     new Chart(ctx, {
-      type: chartType,
+      type: chartType === "area" ? "line" : chartType,
       data,
       options,
     });
-  }
-
-  getColor(index) {
-    const palette = ["#36a2eb", "#ff6384", "#ffcd56", "#4bc0c0", "#9966ff", "#c9cbcf"];
-    return palette[index % palette.length];
   }
 }
 
