@@ -100,10 +100,45 @@ class TableChart {
     if (["pie", "doughnut"].includes(chartType)) {
       data = {
         labels: this.labels,
-        datasets: [{
-          data: this.data,
-          backgroundColor: this.labels.map((_, i) => this.getColor(i)),
-        }],
+        datasets: [
+          {
+            data: this.data,
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const { ctx, chartArea } = chart;
+              if (!chartArea) {
+                // Skip until chart is fully initialized
+                return;
+              }
+    
+              const gradients = [
+                { from: "#006a52", to: "#154734" }, // dark green
+                { from: "#f8ff94", to: "#ffb81c" }, // gold
+                { from: "#98bc00", to: "#7a9a01" }, // light green
+                { from: "#00933b", to: "#007a33" }, // green
+              ];
+              const i = context.dataIndex % gradients.length;
+              const colorSet = gradients[i];
+    
+              const width = chartArea.right - chartArea.left;
+              const height = chartArea.bottom - chartArea.top;
+              const radius = Math.min(width, height) / 2;
+    
+              const gradient = ctx.createRadialGradient(
+                chartArea.left + width / 2,
+                chartArea.top + height / 2,
+                0,
+                chartArea.left + width / 2,
+                chartArea.top + height / 2,
+                radius
+              );
+              gradient.addColorStop(0, colorSet.from);
+              gradient.addColorStop(1, colorSet.to);
+    
+              return gradient;
+            },
+          },
+        ],
       };
     } else {
       if (["stacked", "grouped"].includes(chartType)) {
@@ -131,6 +166,25 @@ class TableChart {
         : {},
     };
 
+    if (this.chartType === "line" && this.table.dataset.fill === "true") {
+      const canvas = document.getElementById(this.chartId);
+      const ctx = canvas.getContext("2d");
+    
+      // Define the gradient to start 10% down the canvas and go to 90% of the height
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.9); // Start at 10% height
+    
+      // Gradient colors: Top (#ffb81c) → Bottom (#f8ff94)
+      gradient.addColorStop(0, "#ffb81c");
+      gradient.addColorStop(1, "#f8ff94");
+    
+      // Apply the gradient to each dataset's background color
+      this.datasets.forEach(dataset => {
+        dataset.backgroundColor = gradient; // Set the gradient for the fill
+        dataset.borderColor = "transparent"; // No border for area chart
+        dataset.fill = true; // Ensure the chart is filled with the gradient
+      });
+    }
+            
     new Chart(ctx, {
       type: chartType,
       data,
@@ -140,10 +194,10 @@ class TableChart {
 
   getColor(index) {
     const palette = [
-      "#ffb81c", // gold
       "#154734", // dark green
-      "#007a33", // green
+      "#ffb81c", // gold
       "#7a9a01", // light green
+      "#007a33", // green
     ];
     return palette[index % palette.length];
   }
