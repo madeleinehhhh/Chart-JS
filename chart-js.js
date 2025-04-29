@@ -13,7 +13,9 @@ class TableChart {
 
     this.chartType = this.table.dataset.chartType;
     if (!this.chartType) {
-      console.error(`No data-chart-type attribute found on table with ID "${tableId}".`);
+      console.error(
+        `No data-chart-type attribute found on table with ID "${tableId}".`
+      );
       return;
     }
 
@@ -33,11 +35,15 @@ class TableChart {
     const tbody = this.table.querySelector("tbody");
 
     if (!thead || !tbody) {
-      console.error(`Table with ID "${this.tableId}" must have both <thead> and <tbody>.`);
+      console.error(
+        `Table with ID "${this.tableId}" must have both <thead> and <tbody>.`
+      );
       return;
     }
 
-    const headerCells = Array.from(thead.querySelectorAll("th")).map((th) => th.textContent.trim());
+    const headerCells = Array.from(thead.querySelectorAll("th")).map((th) =>
+      th.textContent.trim()
+    );
 
     if (["line", "bar", "stacked", "grouped"].includes(this.chartType)) {
       const rows = Array.from(tbody.querySelectorAll("tr"));
@@ -56,7 +62,10 @@ class TableChart {
           }),
           backgroundColor: this.getColor(colIndex),
           borderColor: this.getColor(colIndex),
-          fill: this.chartType === "line" ? (this.table.dataset.fill === "true") : true,
+          fill:
+            this.chartType === "line"
+              ? this.table.dataset.fill === "true"
+              : true,
           tension: this.chartType === "line" ? 0.3 : 0,
           stack: this.chartType === "stacked" ? "stack1" : undefined,
         };
@@ -110,7 +119,7 @@ class TableChart {
                 // Skip until chart is fully initialized
                 return;
               }
-    
+
               const gradients = [
                 { from: "#006a52", to: "#154734" }, // dark green
                 { from: "#f8ff94", to: "#ffb81c" }, // gold
@@ -119,11 +128,11 @@ class TableChart {
               ];
               const i = context.dataIndex % gradients.length;
               const colorSet = gradients[i];
-    
+
               const width = chartArea.right - chartArea.left;
               const height = chartArea.bottom - chartArea.top;
               const radius = Math.min(width, height) / 2;
-    
+
               const gradient = ctx.createRadialGradient(
                 chartArea.left + width / 2,
                 chartArea.top + height / 2,
@@ -134,7 +143,7 @@ class TableChart {
               );
               gradient.addColorStop(0, colorSet.from);
               gradient.addColorStop(1, colorSet.to);
-    
+
               return gradient;
             },
           },
@@ -155,7 +164,9 @@ class TableChart {
       plugins: {
         title: {
           display: true,
-          text: `${this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)} Chart`,
+          text: `${
+            this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)
+          } Chart`,
         },
       },
       scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
@@ -169,22 +180,22 @@ class TableChart {
     if (this.chartType === "line" && this.table.dataset.fill === "true") {
       const canvas = document.getElementById(this.chartId);
       const ctx = canvas.getContext("2d");
-    
+
       // Define the gradient to start 10% down the canvas and go to 90% of the height
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.9); // Start at 10% height
-    
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1); // Start at 10% height
+
       // Gradient colors: Top (#ffb81c) → Bottom (#f8ff94)
       gradient.addColorStop(0, "#ffb81c");
       gradient.addColorStop(1, "#f8ff94");
-    
+
       // Apply the gradient to each dataset's background color
-      this.datasets.forEach(dataset => {
+      this.datasets.forEach((dataset) => {
         dataset.backgroundColor = gradient; // Set the gradient for the fill
         dataset.borderColor = "transparent"; // No border for area chart
         dataset.fill = true; // Ensure the chart is filled with the gradient
       });
     }
-            
+
     new Chart(ctx, {
       type: chartType,
       data,
@@ -201,7 +212,7 @@ class TableChart {
     ];
     return palette[index % palette.length];
   }
-  }
+}
 
 // Auto-init all tables with data-chart-type
 document.addEventListener("DOMContentLoaded", () => {
