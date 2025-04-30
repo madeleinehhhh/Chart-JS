@@ -25,7 +25,6 @@ class TableChart {
   prepareChart() {
     this.parseTable();
     this.makeTableAccessible();
-    this.table.style.display = "none";
     this.insertCanvas();
     this.renderChart();
   }
@@ -181,8 +180,8 @@ class TableChart {
       const canvas = document.getElementById(this.chartId);
       const ctx = canvas.getContext("2d");
 
-      // Define the gradient to start 10% down the canvas and go to 90% of the height
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 1); // Start at 10% height
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 4);
+      console.log(canvas.height);
 
       // Gradient colors: Top (#ffb81c) → Bottom (#f8ff94)
       gradient.addColorStop(0, "#ffb81c");
@@ -194,6 +193,19 @@ class TableChart {
         dataset.borderColor = "transparent"; // No border for area chart
         dataset.fill = true; // Ensure the chart is filled with the gradient
       });
+    }
+
+    // If it's a bar chart, create a vertical gradient
+    let backgroundColor = this.datasets.map(
+      (ds) => ds.backgroundColor || "rgba(75, 192, 192, 1)"
+    );
+    if (this.chartType === "bar") {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient.addColorStop(0, "rgba(75,192,192,1)");
+      gradient.addColorStop(1, "rgba(153,102,255,1)");
+
+      // Apply gradient to all dataset backgrounds
+      backgroundColor = this.datasets.map(() => gradient);
     }
 
     new Chart(ctx, {
