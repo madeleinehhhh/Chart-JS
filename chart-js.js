@@ -200,7 +200,7 @@ class TableChart {
       (ds) => ds.backgroundColor || "rgba(75, 192, 192, 1)"
     );
     if (this.chartType === "bar") {
-      const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      const gradient = ctx.createLinearGradient(0, 0, 0, 800);
       gradient.addColorStop(0, "rgba(75,192,192,1)");
       gradient.addColorStop(1, "rgba(153,102,255,1)");
 
