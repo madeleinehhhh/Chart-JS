@@ -195,19 +195,37 @@ class TableChart {
       });
     }
 
-    // If it's a bar chart, create a vertical gradient
-    let backgroundColor = this.datasets.map(
-      (ds) => ds.backgroundColor || "rgba(75, 192, 192, 1)"
-    );
-    if (this.chartType === "bar") {
-      const gradient = ctx.createLinearGradient(0, 0, 0, 800);
-      gradient.addColorStop(0, "rgba(75,192,192,1)");
-      gradient.addColorStop(1, "rgba(153,102,255,1)");
+    // ✅ Apply gradients to bar charts using context-based logic
+    if (["bar", "stacked", "grouped"].includes(this.chartType)) {
+      this.datasets.forEach((dataset, datasetIndex) => {
+        dataset.backgroundColor = (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+          if (!chartArea) return;
 
-      // Apply gradient to all dataset backgrounds
-      backgroundColor = this.datasets.map(() => gradient);
+          const gradientColors = [
+            { from: "#006a52", to: "#154734" }, // dark green
+            { from: "#00933b", to: "#007a33" }, // green
+            { from: "#98bc00", to: "#7a9a01" }, // light green
+            { from: "#f8ff94", to: "#ffb81c" }, // gold
+          ];
+          const { from, to } =
+            gradientColors[datasetIndex % gradientColors.length];
+
+          const gradient = ctx.createLinearGradient(
+            0,
+            chartArea.top,
+            0,
+            chartArea.bottom
+          );
+          gradient.addColorStop(0, from);
+          gradient.addColorStop(1, to);
+          return gradient;
+        };
+
+        dataset.borderColor = "transparent";
+      });
     }
-
     new Chart(ctx, {
       type: chartType,
       data,
