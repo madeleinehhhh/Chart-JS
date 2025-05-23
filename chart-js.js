@@ -150,6 +150,7 @@ class TableChart {
 
               return gradient;
             },
+            radius: "80%",
           },
         ],
       };
@@ -248,6 +249,7 @@ class TableChart {
         display: true,
         position: "bottom",
         align: "start",
+        layout: "vertical",
         labels: {
           boxWidth: 20,
           padding: 10,
