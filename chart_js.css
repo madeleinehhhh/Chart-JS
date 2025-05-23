@@ -1,0 +1,21 @@
+.layout--twocol-section {
+  align-items: center;
+  gap: calc(var(--padding-standard) / 2);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+.moreinfo {
+  font-size: 0.835em;
+  font-family: "bio-sans", sans-serif;
+  border-top: solid 1.5px var(--universityGold);
+  padding-block: 0.8em;
+  color: #656565;
+}

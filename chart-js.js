@@ -100,7 +100,12 @@ class TableChart {
   }
 
   renderChart() {
-    const ctx = document.getElementById(this.chartId).getContext("2d");
+    const canvas = document.getElementById(this.chartId);
+    const ctx = canvas.getContext("2d");
+
+    // 🧼 Clear fixed dimensions to let CSS control sizing
+    canvas.removeAttribute("width");
+    canvas.removeAttribute("height");
 
     let chartType = this.chartType;
     let data, options;
@@ -160,12 +165,10 @@ class TableChart {
 
     options = {
       responsive: true,
+      maintainAspectRatio: true, // allows full height fill
       plugins: {
         title: {
-          display: true,
-          text: `${
-            this.chartType.charAt(0).toUpperCase() + this.chartType.slice(1)
-          } Chart`,
+          display: false,
         },
       },
       scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
@@ -175,6 +178,7 @@ class TableChart {
           }
         : {},
     };
+    this.configureLegend(options);
 
     if (this.chartType === "line" && this.table.dataset.fill === "true") {
       const canvas = document.getElementById(this.chartId);
@@ -231,6 +235,25 @@ class TableChart {
       data,
       options,
     });
+
+    this.observeResize(canvas);
+  }
+
+  configureLegend(options) {
+    // Default to no legend
+    options.plugins.legend = { display: false };
+
+    if (["pie", "doughnut"].includes(this.chartType)) {
+      options.plugins.legend = {
+        display: true,
+        position: "bottom",
+        align: "start",
+        labels: {
+          boxWidth: 20,
+          padding: 10,
+        },
+      };
+    }
   }
 
   getColor(index) {
@@ -241,6 +264,17 @@ class TableChart {
       "#007a33", // green
     ];
     return palette[index % palette.length];
+  }
+
+  observeResize(canvas) {
+    const resizeObserver = new ResizeObserver(() => {
+      if (this.chart) {
+        this.chart.destroy();
+        this.renderChart(); // fully rerenders the chart with new dimensions
+      }
+    });
+
+    resizeObserver.observe(canvas.parentElement || canvas);
   }
 }
 
