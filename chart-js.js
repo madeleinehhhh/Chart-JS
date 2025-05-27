@@ -231,11 +231,16 @@ class TableChart {
         dataset.borderColor = "transparent";
       });
     }
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: chartType,
       data,
       options,
     });
+
+    const legendContainer = document.createElement("div");
+    legendContainer.className = "custom-legend";
+    legendContainer.innerHTML = chart.generateLegend();
+    canvas.insertAdjacentElement("afterend", legendContainer);
 
     this.observeResize(canvas);
   }
@@ -243,19 +248,6 @@ class TableChart {
   configureLegend(options) {
     // Default to no legend
     options.plugins.legend = { display: false };
-
-    if (["pie", "doughnut"].includes(this.chartType)) {
-      options.plugins.legend = {
-        display: true,
-        position: "bottom",
-        align: "start",
-        layout: "vertical",
-        labels: {
-          boxWidth: 20,
-          padding: 10,
-        },
-      };
-    }
   }
 
   getColor(index) {
