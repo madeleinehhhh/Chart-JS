@@ -1,77 +1,3 @@
-const LegendRenderer = {
-  /**
-   * Render a custom legend next to the chart.
-   * Works for: pie, doughnut (extensible)
-   */
-  render(chart, chartId, chartType) {
-    // if (
-    //   !chart ||
-    //   !chart.data ||
-    //   !chart.data.labels ||
-    //   !chart.data.datasets?.[0]
-    // ) {
-    //   console.warn(
-    //     `LegendRenderer: Invalid or incomplete chart for chartId "${chartId}"`
-    //   );
-    //   return;
-    // }
-
-    console.log(chartType);
-    // if (!["pie", "doughnut"].includes(normalizedType)) {
-    //   // not a supported type for legend
-    //   console.log(normalizedType);
-    //   return;
-    // }
-
-    const canvas = document.getElementById(chartId);
-    if (!canvas || !canvas.parentNode) return;
-
-    // Check for existing legend next to this canvas
-    const existingLegend = document.getElementById(`${chartId}-legend`);
-    if (existingLegend) existingLegend.remove();
-
-    // Create and insert legend container after canvas
-    const legendDiv = document.createElement("div");
-    legendDiv.id = `${chartId}-legend`;
-    legendDiv.className = "chart-legend";
-    legendDiv.setAttribute("data-chart-id", chartId);
-    legendDiv.style.marginTop = "1rem";
-
-    const dataset = chart.data.datasets[0];
-
-    chart.data.labels.forEach((label, i) => {
-      let color = dataset.backgroundColor[i];
-
-      if (typeof color === "function") {
-        color = color({ chart });
-      }
-
-      const item = document.createElement("div");
-      // prevent pointer events (disable clicks)
-      item.style.pointerEvents = "none";
-      item.style.display = "flex";
-      item.style.alignItems = "center";
-      item.style.marginBottom = "4px";
-
-      const colorBox = document.createElement("span");
-      colorBox.style.background = color;
-      colorBox.style.width = "12px";
-      colorBox.style.height = "12px";
-      colorBox.style.marginRight = "8px";
-      colorBox.style.display = "inline-block";
-
-      const text = document.createElement("span");
-      text.textContent = label;
-
-      item.appendChild(colorBox);
-      item.appendChild(text);
-      legendDiv.appendChild(item);
-    });
-
-    canvas.insertAdjacentElement("afterend", legendDiv);
-  },
-};
-
 class TableChart {
   constructor(tableId) {
     this.tableId = tableId;
@@ -245,6 +171,11 @@ class TableChart {
         title: {
           display: false,
         },
+        legend: {
+          display: ["pie", "doughnut"].includes(chartType) ? true : false,
+          position: "bottom",
+          align: "start",
+        },
       },
       scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
         ? {
@@ -309,16 +240,6 @@ class TableChart {
       data,
       options,
     });
-
-    options.plugins.legend = { display: false };
-
-    console.log("About to render legend", {
-      chart: chart,
-      chartId: this.chartId,
-      chartType: this.chartType,
-    });
-    // Add custom legend
-    LegendRenderer.render(chart, this.chartId, this.chartType);
 
     this.observeResize(canvas);
   }
