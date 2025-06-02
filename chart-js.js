@@ -26,7 +26,8 @@ class TableChart {
     this.parseTable();
     this.makeTableAccessible();
     this.insertCanvas();
-    this.renderChart();
+    // this.renderChart();
+    this.setupIntersectionObserver();
   }
 
   parseTable() {
@@ -94,9 +95,20 @@ class TableChart {
   }
 
   insertCanvas() {
+    const container = document.createElement("div");
+    container.className = "chart-container"; // You can style this via CSS
+    // container.style.position = "relative";
+    // container.style.width = "100%";
+    // container.style.height = "100%";
+
     const canvas = document.createElement("canvas");
     canvas.id = this.chartId;
-    this.table.insertAdjacentElement("afterend", canvas);
+    canvas.style.display = "block";
+    canvas.style.width = "100%";
+
+    container.appendChild(canvas);
+
+    this.table.insertAdjacentElement("afterend", container);
   }
 
   renderChart() {
@@ -166,21 +178,48 @@ class TableChart {
 
     options = {
       responsive: true,
-      maintainAspectRatio: true, // allows full height fill
+      maintainAspectRatio: true,
+      animation: {
+        duration: 1500,
+        easing: "easeInOutQuart",
+      },
       plugins: {
-        title: {
-          display: false,
-        },
+        title: { display: false },
         legend: {
-          display: ["pie", "doughnut"].includes(chartType) ? true : false,
+          display: ["pie", "doughnut"].includes(chartType),
           position: "bottom",
           align: "start",
         },
       },
       scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
         ? {
-            x: { stacked: this.chartType === "stacked" },
-            y: { stacked: this.chartType === "stacked", beginAtZero: true },
+            x: {
+              stacked: this.chartType === "stacked",
+              ticks: {
+                callback: function (value) {
+                  // Wrap every 10 characters, breaking at space
+                  const label = this.getLabelForValue(value);
+                  const maxWidth = 10;
+                  return label.length > maxWidth
+                    ? label.split(" ").reduce((acc, word) => {
+                        const last = acc[acc.length - 1];
+                        if (last && (last + " " + word).length <= maxWidth) {
+                          acc[acc.length - 1] = last + " " + word;
+                        } else {
+                          acc.push(word);
+                        }
+                        return acc;
+                      }, [])
+                    : label;
+                },
+                maxRotation: 0,
+                minRotation: 0,
+              },
+            },
+            y: {
+              stacked: this.chartType === "stacked",
+              beginAtZero: true,
+            },
           }
         : {},
     };
@@ -242,6 +281,31 @@ class TableChart {
     });
 
     this.observeResize(canvas);
+  }
+
+  setupIntersectionObserver() {
+    const canvas = document.getElementById(this.chartId);
+
+    if (!canvas) {
+      console.error(`Canvas with ID ${this.chartId} not found.`);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries, observerInstance) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.renderChart(); // now run chart logic
+            observerInstance.unobserve(entry.target); // trigger only once
+          }
+        });
+      },
+      {
+        threshold: 0.3,
+      }
+    );
+
+    observer.observe(canvas);
   }
 
   getColor(index) {
