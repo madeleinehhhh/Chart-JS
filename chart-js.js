@@ -130,6 +130,11 @@ class TableChart {
 
   renderChart() {
     const canvas = document.getElementById(this.chartId);
+    if (!canvas) {
+      console.error(`Canvas with ID ${this.chartId} not found.`);
+      return;
+    }
+
     const ctx = canvas.getContext("2d");
 
     // Clear fixed dimensions to let CSS control sizing
@@ -138,9 +143,12 @@ class TableChart {
 
     const chartConfig = this.getChartConfig();
 
-    // Store chart instance for cleanup
+    // Clean up existing chart and observer
     if (this.chart) {
       this.chart.destroy();
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
     }
 
     this.chart = new Chart(ctx, chartConfig);
@@ -373,14 +381,23 @@ class TableChart {
   }
 
   observeResize(canvas) {
+    // Debounce resize events to prevent infinite loops
+    let resizeTimeout;
+
     const resizeObserver = new ResizeObserver(() => {
-      if (this.chart) {
-        this.chart.destroy();
-        this.renderChart();
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
       }
+
+      resizeTimeout = setTimeout(() => {
+        if (this.chart) {
+          this.chart.resize();
+        }
+      }, 100);
     });
 
     resizeObserver.observe(canvas.parentElement || canvas);
+    this.resizeObserver = resizeObserver; // Store for cleanup
   }
 }
 
