@@ -19,6 +19,8 @@ class TableChart {
       return;
     }
 
+    this.tooltipFormat = this.table.dataset.tooltipFormat || null;
+
     this.prepareChart();
   }
 
@@ -181,7 +183,7 @@ class TableChart {
       maintainAspectRatio: true,
       animation: {
         duration: 1500,
-        easing: "easeInOutQuart",
+        easing: "easeInQuart",
       },
       plugins: {
         title: { display: false },
@@ -189,6 +191,11 @@ class TableChart {
           display: ["pie", "doughnut"].includes(chartType),
           position: "bottom",
           align: "start",
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => this.getTooltipLabelCallback()(context),
+          },
         },
       },
       scales: ["stacked", "grouped", "bar", "line"].includes(chartType)
@@ -225,21 +232,28 @@ class TableChart {
     };
 
     if (this.chartType === "line" && this.table.dataset.fill === "true") {
-      const canvas = document.getElementById(this.chartId);
-      const ctx = canvas.getContext("2d");
-
-      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 4);
-      console.log(canvas.height);
-
-      // Gradient colors: Top (#ffb81c) → Bottom (#f8ff94)
-      gradient.addColorStop(0, "#ffb81c");
-      gradient.addColorStop(1, "#f8ff94");
-
-      // Apply the gradient to each dataset's background color
       this.datasets.forEach((dataset) => {
-        dataset.backgroundColor = gradient; // Set the gradient for the fill
-        dataset.borderColor = "transparent"; // No border for area chart
-        dataset.fill = true; // Ensure the chart is filled with the gradient
+        dataset.backgroundColor = (context) => {
+          const chart = context.chart;
+          const { ctx, chartArea } = chart;
+
+          if (!chartArea) return null;
+
+          const gradient = ctx.createLinearGradient(
+            0,
+            chartArea.top,
+            0,
+            chartArea.bottom
+          );
+
+          gradient.addColorStop(0, "#ffb81c"); // top
+          gradient.addColorStop(1, "#f8ff94"); // bottom
+
+          return gradient;
+        };
+
+        dataset.borderColor = "transparent";
+        dataset.fill = true;
       });
     }
 
@@ -274,6 +288,7 @@ class TableChart {
         dataset.borderColor = "transparent";
       });
     }
+
     const chart = new Chart(ctx, {
       type: chartType,
       data,
@@ -301,11 +316,41 @@ class TableChart {
         });
       },
       {
-        threshold: 0.3,
+        threshold: 0.9,
       }
     );
 
+    // Create the chart AFTER everything is defined
+    this.chart = new Chart(ctx, {
+      type: chartType,
+      data,
+      options,
+    });
+
     observer.observe(canvas);
+  }
+
+  getTooltipLabelCallback() {
+    const format = this.tooltipFormat;
+
+    if (format === "dollars-millions") {
+      return function (context) {
+        const value = context.raw * 1_000_000;
+        return `$${value.toLocaleString()}`;
+      };
+    }
+
+    if (format === "percentages") {
+      return function (context) {
+        const value = context.raw;
+        return `${value}%`;
+      };
+    }
+
+    // Default: just show the raw number
+    return function (context) {
+      return context.raw;
+    };
   }
 
   getColor(index) {
