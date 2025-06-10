@@ -220,7 +220,6 @@ class TableChart {
         : {},
     };
 
-    this.chart = new Chart(ctx, { type: chartType, data, options });
     this.observeResize(canvas);
   }
 
@@ -277,10 +276,28 @@ class TableChart {
   }
 
   observeResize(canvas) {
+    let lastWidth = canvas.offsetWidth;
+    let lastHeight = canvas.offsetHeight;
+    let resizeScheduled = false;
+
     const resizeObserver = new ResizeObserver(() => {
-      if (this.chart) {
-        this.chart.destroy();
-        this.renderChart();
+      const currentWidth = canvas.offsetWidth;
+      const currentHeight = canvas.offsetHeight;
+
+      if (currentWidth !== lastWidth || currentHeight !== lastHeight) {
+        lastWidth = currentWidth;
+        lastHeight = currentHeight;
+
+        if (!resizeScheduled) {
+          resizeScheduled = true;
+          requestAnimationFrame(() => {
+            if (this.chart) {
+              this.chart.destroy();
+            }
+            this.renderChart();
+            resizeScheduled = false;
+          });
+        }
       }
     });
 
