@@ -1,9 +1,9 @@
 // import "https://flackr.github.io/scroll-timeline/dist/scroll-timeline.js";
-const scrollpolyfil = document.createElement("script");
-scrollpolyfil.src = "https://flackr.github.io/scroll-timeline/dist/scroll-timeline.js";
-scrollpolyfil.defer = true;
+// const scrollpolyfil = document.createElement("script");
+// scrollpolyfil.src = "https://flackr.github.io/scroll-timeline/dist/scroll-timeline.js";
+// scrollpolyfil.defer = true;
 
-document.head.appendChild(scrollpolyfil);
+// document.head.appendChild(scrollpolyfil);
 
 // import "https://cdn.jsdelivr.net/npm/chart.js";
 const chartjs = document.createElement("script");

@@ -210,6 +210,9 @@ class TableChart {
           callbacks: {
             label: this.getTooltipLabelCallback(),
           },
+          padding: 10,
+          boxPadding: 6,
+          titleMarginBottom: 4,
         },
       },
       scales: this.getScalesConfig(),
